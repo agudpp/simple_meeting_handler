@@ -1,0 +1,132 @@
+
+
+
+<!doctype html>
+
+<script type=text/javascript>
+
+// this will be the one containing the list of elements
+var currentTime = 0.0;
+var currElementIndex = -1;
+var elementList = [];
+
+
+// set the possible state:
+// selected
+// passed
+// incomming
+function setItemStyle(element, styleToSet) {
+    if (!element) {
+        return;
+    }
+    if (styleToSet === 'selected') {
+        element.style = "background-color: red";
+    } else if (styleToSet === 'passed') {
+        element.style = "background-color: grey";
+    } else if (styleToSet === 'incoming') {
+        element.style = "background-color: green";
+    }
+}
+
+
+function getCurrentElementIndex() {
+    if (!elementList || currElementIndex >= elementList.length - 1) {
+        return currElementIndex;
+    }
+
+    // check if we need to move forward or not
+    const nextIndex = currElementIndex + 1;
+    const nextBaseTime = Number(elementList[nextIndex].getAttribute("base_time"));
+    return (currentTime >= nextBaseTime) ? nextIndex : currElementIndex;
+}
+
+// we will set the timer here to the proper value
+function configureTimer(timerElem) {
+    if (!timerElem) {
+        return;
+    }
+    // every one second we will update this
+    setInterval(function() {
+        currentTime += 1;
+        timerElem.innerText = currentTime;
+
+        // here we need to check which is the value to highlight
+        var newIndex = getCurrentElementIndex();
+        if (newIndex !== currElementIndex) {
+            // need to configure this and also the other one
+            if (currElementIndex >= 0) {
+                setItemStyle(elementList[currElementIndex], 'passed');
+            }
+            setItemStyle(elementList[newIndex], 'selected');
+            currElementIndex = newIndex;
+        }
+    }, 
+    1000);
+}
+
+function getAllItemElements() {
+    var list = document.getElementsByName("list_item");
+    return list;
+}
+
+
+
+// configure all the items to be incoming
+function configureInitialStates(elements) {
+
+    // get the current index from the given time
+    for (var j = 0; j < elements.length; ++j) {
+        const baseTime = Number(elementList[j].getAttribute("base_time"));
+        if (currentTime >= baseTime) {
+            setItemStyle(elementList[j], 'passed');
+        } else {
+            setItemStyle(elementList[j], 'incoming');
+        }
+    }
+
+}
+
+// wait dom is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // get the timer element 
+    var clockTimerElem = document.getElementById("timer");
+    currentTime = Number(clockTimerElem.innerText);
+    
+    // configure all the elements
+    elementList = getAllItemElements();
+    configureInitialStates(elementList);
+
+
+    //alert('configuring timer for element: ' + clockTimerElem)
+    configureTimer(clockTimerElem);
+}, false);
+
+</script>
+
+<style>
+.selected : {
+    background-color: red;
+}
+.passed : {
+    background-color: grey;
+}
+.incoming : {
+    background-color: green;
+}
+
+</style>
+
+<title>Hello from Flask</title> 
+{% if name %}
+    <h1>Hello {{ name }}!</h1> 
+{% else %}
+    <h1>Hello, World!</h1> 
+{% endif %}
+
+{% if elementList %} 
+     {% for x in elementList%} 
+        <div name="list_item" class="incoming" base_time="{{x.base_time}}"> {{x.title}} -- {{x.duration_secs}} </div><br/>
+     {% endfor %}
+{% endif %}
+
+<div id="timer">0.00</div>
